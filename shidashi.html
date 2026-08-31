@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗大师 · 诗词点评系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #2c1810;
+            --paper: #f7f3eb;
+            --paper-dark: #ede7db;
+            --accent: #8b4513;
+            --accent-light: #a0522d;
+            --gold: #c9a96e;
+            --shadow: rgba(44, 24, 16, 0.08);
+            --shadow-deep: rgba(44, 24, 16, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: var(--paper);
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== 背景装饰 ===== */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* ===== 头部 ===== */
+        header {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(135deg, #2c1810 0%, #4a2c1a 100%);
+            color: var(--paper);
+            padding: 40px 20px 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px var(--shadow-deep);
+        }
+
+        .logo {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 3.5rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--gold), #e8d5a3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            letter-spacing: 4px;
+            font-weight: 400;
+        }
+
+        /* ===== 搜索栏 ===== */
+        .search-section {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--paper);
+            padding: 20px;
+            border-bottom: 1px solid var(--paper-dark);
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 48px;
+            border: 2px solid var(--paper-dark);
+            border-radius: 30px;
+            font-size: 1rem;
+            font-family: 'Noto Serif SC', serif;
+            background: white;
+            color: var(--ink);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(139, 69, 19, 0.1);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            opacity: 0.5;
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--paper-dark);
+            border-radius: 25px;
+            background: white;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--ink);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+        }
+
+        .random-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(139, 69, 19, 0.3);
+        }
+
+        .random-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 69, 19, 0.4);
+        }
+
+        .stats {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* ===== 诗词网格 ===== */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .poems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+        }
+
+        /* ===== 诗词卡片 ===== */
+        .poem-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 20px var(--shadow);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        .poem-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .poem-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px var(--shadow-deep);
+            border-color: var(--gold);
+        }
+
+        .poem-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .card-author {
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .card-dynasty {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--paper);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #888;
+            border: 1px solid var(--paper-dark);
+        }
+
+        .card-content {
+            font-size: 1rem;
+            line-height: 2;
+            color: #444;
+            margin-bottom: 16px;
+            max-height: 120px;
+            overflow: hidden;
+            position: relative;
+            white-space: pre-wrap;
+        }
+
+        .card-content::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, white);
+        }
+
+        .card-commentary-preview {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.6;
+            padding: 12px 16px;
+            background: var(--paper);
+            border-radius: 10px;
+            border-left: 3px solid var(--gold);
+            position: relative;
+        }
+
+        .card-commentary-preview::before {
+            content: "「点评」";
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .has-official {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--gold);
+        }
+
+        /* ===== 详情弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(44, 24, 16, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--paper);
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--accent);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--ink);
+        }
+
+        .modal-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .modal-meta span {
+            padding: 6px 16px;
+            background: var(--paper);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .modal-poem-text {
+            font-size: 1.15rem;
+            line-height: 2.2;
+            color: #333;
+            margin-bottom: 30px;
+            padding: 24px;
+            background: linear-gradient(135deg, #faf8f3, #f5f0e8);
+            border-radius: 12px;
+            border-left: 4px solid var(--accent);
+            white-space: pre-wrap;
+        }
+
+        .modal-commentary {
+            padding: 24px;
+            background: var(--paper);
+            border-radius: 12px;
+            border: 1px solid var(--paper-dark);
+        }
+
+        .modal-commentary h3 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-commentary h3::before {
+            content: "✦";
+            color: var(--gold);
+        }
+
+        .modal-commentary p {
+            font-size: 1rem;
+            line-height: 1.9;
+            color: #555;
+            text-align: justify;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* ===== 随机推荐弹窗 ===== */
+        .daily-poem {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .daily-poem .modal-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .logo { font-size: 2.5rem; }
+            .poems-grid { grid-template-columns: 1fr; }
+            .modal-content { padding: 24px; }
+            .modal-title { font-size: 1.5rem; }
+            .search-container { flex-direction: column; }
+            .search-box { min-width: 100%; }
+        }
+
+        /* ===== 滚动条美化 ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--paper);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+
+        /* ===== 动画 ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .poem-card {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--paper-dark);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+
+    <header>
+        <div class="logo">诗大师</div>
+        <div class="subtitle">千古诗词 · 大师点评</div>
+    </header>
+
+    <div class="search-section">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索诗词标题、作者、诗句..." autocomplete="off">
+            </div>
+            <button class="filter-btn active" data-filter="all" onclick="filterBy('all')">全部</button>
+            <button class="filter-btn" data-filter="唐" onclick="filterBy('唐')">唐代</button>
+            <button class="filter-btn" data-filter="宋" onclick="filterBy('宋')">宋代</button>
+            <button class="filter-btn" data-filter="先秦" onclick="filterBy('先秦')">先秦</button>
+            <button class="random-btn" onclick="showRandomPoem()">🎲 每日一诗</button>
+        </div>
+        <div class="stats" id="stats">共收录 <strong>68</strong> 首经典诗词</div>
+    </div>
+
+    <div class="container">
+        <div class="poems-grid" id="poemsGrid"></div>
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div class="icon">📜</div>
+            <h3>未找到相关诗词</h3>
+            <p>请尝试其他关键词，或使用「每日一诗」发现佳作</p>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 诗词数据 =====
+        const poemsData = [
+            {"id":1,"title":"送杜少府之任蜀州","author":"王勃","dynasty":"唐","content":"城阙辅三秦，风烟望五津。\n与君离别意，同是宦游人。\n海内存知己，天涯若比邻。\n无为在歧路，儿女共沾巾。","commentary":"全诗开合顿挫，气脉流通，意境旷达。诗中的悲凉凄怆之气，音调明快爽朗，语言清新高远，内容独树碑石。此诗一洗往昔送别诗中悲苦缠绵之态，体现出诗人高远的志向、豁达的情趣和旷达的胸怀。","official":true},
+            {"id":2,"title":"琵琶行","author":"白居易","dynasty":"唐","content":"浔阳江头夜送客，枫叶荻花秋瑟瑟。\n主人下马客在船，举酒欲饮无管弦。\n醉不成欢惨将别，别时茫茫江浸月。\n忽闻水上琵琶声，主人忘归客不发。\n寻声暗问弹者谁？琵琶声停欲语迟。\n移船相近邀相见，添酒回灯重开宴。\n千呼万唤始出来，犹抱琵琶半遮面。\n转轴拨弦三两声，未成曲调先有情。\n弦弦掩抑声声思，似诉平生不得志。\n低眉信手续续弹，说尽心中无限事。\n轻拢慢捻抹复挑，初为《霓裳》后《六幺》。\n大弦嘈嘈如急雨，小弦切切如私语。\n嘈嘈切切错杂弹，大珠小珠落玉盘。\n间关莺语花底滑，幽咽泉流冰下难。\n冰泉冷涩弦凝绝，凝绝不通声暂歇。\n别有幽愁暗恨生，此时无声胜有声。\n银瓶乍破水浆迸，铁骑突出刀枪鸣。\n曲终收拨当心画，四弦一声如裂帛。\n东船西舫悄无言，唯见江心秋月白。\n沉吟放拨插弦中，整顿衣裳起敛容。\n自言本是京城女，家在虾蟆陵下住。\n十三学得琵琶成，名属教坊第一部。\n曲罢曾教善才服，妆成每被秋娘妒。\n五陵年少争缠头，一曲红绡不知数。\n钿头银篦击节碎，血色罗裙翻酒污。\n今年欢笑复明年，秋月春风等闲度。\n弟走从军阿姨死，暮去朝来颜色故。\n门前冷落鞍马稀，老大嫁作商人妇。\n商人重利轻别离，前月浮梁买茶去。\n去来江口守空船，绕船月明江水寒。\n夜深忽梦少年事，梦啼妆泪红阑干。\n我闻琵琶已叹息，又闻此语重唧唧。\n同是天涯沦落人，相逢何必曾相识！\n我从去年辞帝京，谪居卧病浔阳城。\n浔阳地僻无音乐，终岁不闻丝竹声。\n住近湓江地低湿，黄芦苦竹绕宅生。\n其间旦暮闻何物？杜鹃啼血猿哀鸣。\n春江花朝秋月夜，往往取酒还独倾。\n岂无山歌与村笛？呕哑嘲哳难为听。\n今夜闻君琵琶语，如听仙乐耳暂明。\n莫辞更坐弹一曲，为君翻作《琵琶行》。\n感我此言良久立，却坐促弦弦转急。\n凄凄不似向前声，满座重闻皆掩泣。\n座中泣下谁最多？江州司马青衫湿。","commentary":"这首诗的艺术性很高，其一，他把歌咏者与被歌咏者的思想感情融二为一；其二，诗中的写景物、写音乐，手段都极其高超，而且又都和写身世、抒悲慨紧密结合，气氛一致，使作品自始至终浸沉在一种悲凉哀怨的氛围里。","official":true},
+            {"id":3,"title":"梅花","author":"王安石","dynasty":"宋","content":"墙角数枝梅，凌寒独自开。\n遥知不是雪，为有暗香来。","commentary":"首二句写墙角梅花不惧严寒，傲然独放，末二句写梅花洁白鲜艳，香气远布，赞颂了梅花的风度和品格。诗人用雪喻梅的冰清玉洁，又用\"暗香\"点出梅胜于雪，说明坚强高洁的人格所具有的魅力。","official":true},
+            {"id":4,"title":"爱莲说","author":"周敦颐","dynasty":"宋","content":"水陆草木之花，可爱者甚蕃。晋陶渊明独爱菊。自李唐来，世人甚爱牡丹。予独爱莲之出淤泥而不染，濯清涟而不妖，中通外直，不蔓不枝，香远益清，亭亭净植，可远观而不可亵玩焉。予谓菊，花之隐逸者也；牡丹，花之富贵者也；莲，花之君子者也。噫！菊之爱，陶后鲜有闻。莲之爱，同予者何人?牡丹之爱，宜乎众矣!","commentary":"作者通过对莲花的爱慕与礼赞，表明自己对美好理想的憧憬，对高尚情操的崇奉，对庸劣世态的憎恶。用花进行比喻，让花的特性喻人，虽平淡，但比喻帖切，意味深长。","official":true},
+            {"id":5,"title":"陋室铭","author":"刘禹锡","dynasty":"唐","content":"山不在高，有仙则名。水不在深，有龙则灵。斯是陋室，惟吾德馨。苔痕上阶绿，草色入帘青。谈笑有鸿儒，往来无白丁。可以调素琴，阅金经。无丝竹之乱耳，无案牍之劳形。南阳诸葛庐，西蜀子云亭。孔子云：何陋之有？","commentary":"作者托物言志，借陋室之名行歌颂道德品质之实，表达出室主人高洁傲岸的节操和安贫乐道的情趣。","official":true},
+            {"id":6,"title":"归园田居·其一","author":"陶渊明","dynasty":"魏晋","content":"少无适俗韵，性本爱丘山。\n误落尘网中，一去三十年。\n羁鸟恋旧林，池鱼思故渊。\n开荒南野际，守拙归园田。\n方宅十余亩，草屋八九间。\n榆柳荫后檐，桃李罗堂前。\n暧暧远人村，依依墟里烟。\n狗吠深巷中，鸡鸣桑树颠。\n户庭无尘杂，虚室有余闲。\n久在樊笼里，复得返自然。","commentary":"此诗抒发了作者辞官归隐后的愉快心情和乡居乐趣，同时又隐含了对官场黑暗腐败的生活的厌恶之感。表现了作者不愿同流合污，为保持完整的人格和高尚的情操而甘受田间生活的艰辛。","official":true},
+            {"id":7,"title":"敕勒歌","author":"乐府诗集","dynasty":"南北朝","content":"敕勒川，阴山下。\n天似穹庐，笼盖四野。\n天苍苍，野茫茫。\n风吹草低见牛羊。","commentary":"这是一首敕勒人唱的民歌，它歌唱了大草原的景色和游牧民族的生活。全诗具有北朝民歌所特有的明朗豪爽的风格，境界开阔，音调雄壮，语言明白如话，艺术概括力极强。","official":true},
+            {"id":8,"title":"白雪歌送武判官归京","author":"岑参","dynasty":"唐","content":"北风卷地白草折，胡天八月即飞雪。\n忽如一夜春风来，千树万树梨花开。\n散入珠帘湿罗幕，狐裘不暖锦衾薄。\n将军角弓不得控，都护铁衣冷难着。\n瀚海阑干百丈冰，愁云惨淡万里凝。\n中军置酒饮归客，胡琴琵琶与羌笛。\n纷纷暮雪下辕门，风掣红旗冻不翻。\n轮台东门送君去，去时雪满天山路。\n山回路转不见君，雪上空留马行处。","commentary":"此诗是岑参在轮台写的一首送别诗，色彩瑰丽浪漫，气势浑然磅礴，描绘了祖国西北边塞的壮丽景色。全诗内涵丰富，意境鲜明独特，具有极强的艺术感染力。","official":true},
+            {"id":9,"title":"江雪","author":"柳宗元","dynasty":"唐","content":"千山鸟飞绝，万径人踪灭。\n孤舟蓑笠翁，独钓寒江雪。","commentary":"诗用具体而细致的手法来摹写背景，用远距离画面来描写主要形象；精雕细琢和极度的夸张概括，错综地统一在一首诗里，是这首山水小诗独有的艺术特色。","official":true},
+            {"id":10,"title":"过零丁洋","author":"文天祥","dynasty":"宋","content":"辛苦遭逢起一经，干戈寥落四周星。\n山河破碎风飘絮，身世浮沉雨打萍。\n惶恐滩头说惶恐，零丁洋里叹零丁。\n人生自古谁无死？留取丹心照汗青。","commentary":"本诗开头，回顾身世。尾联却一笔宕开：人生自古谁无死？留取丹心照汗青，以磅礴的气势、高亢的情调收束全篇。全诗格调沉郁悲壮，浩然正气贯长虹，确是一首伟大爱国主义诗篇。","official":true},
+            {"id":11,"title":"回乡偶书","author":"贺知章","dynasty":"唐","content":"少小离家老大回，乡音无改鬓毛衰。\n儿童相见不相识，笑问客从何处来。","commentary":"全诗二十八个字中无一生僻字，不用一个典故，都是家常话。但并不是一览无余，它寄寓着可以供人反复咀嚼，反复寻味，层层追索，层层补充的情致。","official":true},
+            {"id":12,"title":"凉州词","author":"王翰","dynasty":"唐","content":"葡萄美酒夜光杯，欲饮琵琶马上催。\n醉卧沙场君莫笑，古来征战几人回？","commentary":"诗人以饱蘸激情的笔触定下这开篇的葡萄美酒夜光杯。犹如突然间拉开帷幕，在人们的眼前展现出五光十色、琳琅满目、酒香四溢的盛大筵席。这景象使人惊喜、兴奋，为全诗的抒情创造了气氛，定下了基调。","official":true},
+            {"id":13,"title":"相思","author":"王维","dynasty":"唐","content":"红豆生南国，春来发几枝。\n愿君多采撷，此物最相思。","commentary":"全诗情调健美高雅，怀思饱满奔放，语言朴素无华，韵律和谐柔美，感情真挚，具有淳朴深厚之美。","official":true},
+            {"id":14,"title":"春望","author":"杜甫","dynasty":"唐","content":"国破山河在，城春草木深。\n感时花溅泪，恨别鸟惊心。\n烽火连三月，家书抵万金。\n白头搔更短，浑欲不胜簪。","commentary":"这首诗反映了诗人热爱国家、眷念家人的美好情操。意脉贯通而不平直，情景兼具而不游离，感情强烈而不浅露，内容丰富而不芜杂，格律严谨而不板滞。","official":true},
+            {"id":15,"title":"如梦令·昨夜雨疏风骤","author":"李清照","dynasty":"宋","content":"昨夜雨疏风骤，浓睡不消残酒。\n试问卷帘人，却道海棠依旧。\n知否，知否？应是绿肥红瘦。","commentary":"这首小令写得曲折委婉，极有层次。词人因惜花而痛饮，因情知花谢却又抱一丝侥幸心理而\"试问\"。因不相信\"卷帘人\"的回答而再次反问。如此层层转折，步步深入，将惜花之情表达得摇曳多姿。","official":true},
+            {"id":16,"title":"枫桥夜泊","author":"张继","dynasty":"唐","content":"月落乌啼霜满天，江枫渔火对愁眠。\n姑苏城外寒山寺，夜半钟声到客船。","commentary":"诗人用最具诗意的语言构造出一个清幽寂远的意境：江畔秋夜渔火点点，羁旅客子卧闻静夜钟声。所有景物的挑选都独具慧眼：一静一动、一明一暗、江边岸上，景物的搭配与人物的心情达到了高度的默契与交融。","official":true},
+            {"id":17,"title":"满江红","author":"岳飞","dynasty":"宋","content":"怒发冲冠，凭栏处、潇潇雨歇。\n抬望眼，仰天长啸，壮怀激烈。\n三十功名尘与土，八千里路云和月。\n莫等闲，白了少年头，空悲切！\n靖康耻，犹未雪。臣子恨，何时灭！\n驾长车，踏破贺兰山缺。\n壮志饥餐胡虏肉，笑谈渴饮匈奴血。\n待从头、收拾旧山河，朝天阙。","commentary":"岳飞工诗词，虽流传极少，但这首《满江红》英勇而悲壮，深为人们所喜爱。它真实、充分地反映了岳飞精忠报国、一腔热血的英雄气概。","official":true},
+            {"id":18,"title":"登幽州台歌","author":"陈子昂","dynasty":"唐","content":"前不见古人，后不见来者。\n念天地之悠悠，独怆然而涕下。","commentary":"上两句俯仰古今，写出时间绵长；第三句登楼眺望，写出空间辽阔。在广阔无垠的背景中，第四句描绘了诗人悲哀苦闷的情绪，两相映照，分外动人。","official":true},
+            {"id":19,"title":"龟虽寿","author":"曹操","dynasty":"东汉","content":"神龟虽寿，犹有竟时。\n螣蛇乘雾，终为土灰。\n老骥伏枥，志在千里。\n烈士暮年，壮心不已。\n盈缩之期，不但在天；\n养怡之福，可得永年。\n幸甚至哉，歌以咏志。","commentary":"诗中融哲理思考、慷慨激情和艺术形象于一炉，表现了老当益壮、积极进取的人生态度。","official":true},
+            {"id":20,"title":"蒹葭","author":"佚名","dynasty":"先秦","content":"蒹葭苍苍，白露为霜。\n所谓伊人，在水一方。\n溯洄从之，道阻且长。\n溯游从之，宛在水中央。\n蒹葭萋萋，白露未晞。\n所谓伊人，在水之湄。\n溯洄从之，道阻且跻。\n溯游从之，宛在水中坻。\n蒹葭采采，白露未已。\n所谓伊人，在水之涘。\n溯洄从之，道阻且右。\n溯游从之，宛在水中沚。","commentary":"这首诗最具价值意义、最令人共鸣的东西，不是抒发主人公的追求和失落，而是他所创造的\"在水一方\"——可望难即这一具有普遍意义的艺术意境。","official":true},
+            {"id":21,"title":"蜀相","author":"杜甫","dynasty":"唐","content":"丞相祠堂何处寻，锦官城外柏森森。\n映阶碧草自春色，隔叶黄鹂空好音。\n三顾频烦天下计，两朝开济老臣心。\n出师未捷身先死，长使英雄泪满襟。","commentary":"《蜀相》对于壮志未酬者，它既是颂辞，又是挽歌，一诗囊括历史，融汇古今，语言凝炼而内涵丰富。","official":true},
+            {"id":22,"title":"江城子·乙卯正月二十日夜记梦","author":"苏轼","dynasty":"宋","content":"十年生死两茫茫，不思量，自难忘。\n千里孤坟，无处话凄凉。\n纵使相逢应不识，尘满面，鬓如霜。\n夜来幽梦忽还乡，小轩窗，正梳妆。\n相顾无言，惟有泪千行。\n料得年年肠断处，明月夜，短松冈。","commentary":"这是苏轼为悼念原配妻子王弗而写的悼亡词。词中采用白描手法，出语如话家常，却字字从肺腑镂出，自然而又深刻，平淡中寄寓着真淳。","official":true},
+            {"id":23,"title":"锦瑟","author":"李商隐","dynasty":"唐","content":"锦瑟无端五十弦，一弦一柱思华年。\n庄生晓梦迷蝴蝶，望帝春心托杜鹃。\n沧海月明珠有泪，蓝田日暖玉生烟。\n此情可待成追忆，只是当时已惘然。","commentary":"诗人大量借用庄生梦蝶，杜鹃啼血等典故，采用比兴手法，运用联想与想象，把听觉感受，转化为视觉形象。以片段意象的组合，创造朦胧的境界，从而传达其真挚浓烈而又幽约深曲的深思。","official":true},
+            {"id":24,"title":"行路难·其一","author":"李白","dynasty":"唐","content":"金樽清酒斗十千，玉盘珍羞直万钱。\n停杯投箸不能食，拔剑四顾心茫然。\n欲渡黄河冰塞川，将登太行雪满山。\n闲来垂钓碧溪上，忽复乘舟梦日边。\n行路难！行路难！多歧路，今安在？\n长风破浪会有时，直挂云帆济沧海。","commentary":"这首诗跳荡纵横，百步九折地揭示了诗人感情的激荡起伏、复杂变化。诗中跌宕起伏的感情，跳跃式的思维，以及高昂的气势，使它成为后人称颂的千古名篇。","official":true},
+            {"id":25,"title":"出塞二首·其一","author":"王昌龄","dynasty":"唐","content":"秦时明月汉时关，万里长征人未还。\n但使龙城飞将在，不教胡马度阴山。","commentary":"这首《出塞》除具有一般边塞诗那种激越的诗情、气势外，还很注意语言的精美。并善于插入细节的描写，酝酿诗情，勾勒形象，因而能够神完气足，含蓄不尽。","official":true},
+            {"id":26,"title":"声声慢·寻寻觅觅","author":"李清照","dynasty":"宋","content":"寻寻觅觅，冷冷清清，凄凄惨惨戚戚。\n乍暖还寒时候，最难将息。\n三杯两盏淡酒，怎敌他、晚来风急？\n雁过也，正伤心，却是旧时相识。\n满地黄花堆积。憔悴损，如今有谁堪摘？\n守着窗儿，独自怎生得黑？\n梧桐更兼细雨，到黄昏、点点滴滴。\n这次第，怎一个愁字了得！","commentary":"起句一连用七组叠词，极富音乐美，读起来有一种大珠小珠落玉盘的感觉。只觉齿舌音来回反复吟唱，徘徊低迷，一种莫名其妙的愁绪在心头和空气中弥漫开来，久久不散。","official":true},
+            {"id":27,"title":"关雎","author":"佚名","dynasty":"先秦","content":"关关雎鸠，在河之洲。\n窈窕淑女，君子好逑。\n参差荇菜，左右流之。\n窈窕淑女，寤寐求之。\n求之不得，寤寐思服。\n悠哉悠哉，辗转反侧。\n参差荇菜，左右采之。\n窈窕淑女，琴瑟友之。\n参差荇菜，左右芼之。\n窈窕淑女，钟鼓乐之。","commentary":"《关雎》是《诗经》首篇，它是反映一个青年对一位容貌美丽姑娘的爱慕和追求，写他求而不得的痛苦和想象求而得之的喜悦，是我国爱情诗之祖。","official":true},
+            {"id":28,"title":"黄鹤楼","author":"崔颢","dynasty":"唐","content":"昔人已乘黄鹤去，此地空余黄鹤楼。\n黄鹤一去不复返，白云千载空悠悠。\n晴川历历汉阳树，芳草萋萋鹦鹉洲。\n日暮乡关何处是？烟波江上使人愁。","commentary":"这首诗是吊古怀乡之佳作，诗以丰富的想象力将读者引入远古，又回到现实种种情思和自然景色交融在一起，有谁能不感到它的凄婉苍凉。","official":true},
+            {"id":29,"title":"菩萨蛮·书江西造口壁","author":"辛弃疾","dynasty":"宋","content":"郁孤台下清江水，中间多少行人泪。\n西北望长安，可怜无数山。\n青山遮不住，毕竟东流去。\n江晚正愁余，山深闻鹧鸪。","commentary":"此首《菩萨蛮》，用极高明之比兴艺术，写极深沉之爱国情思，无愧为词中瑰宝。梁启超云：《菩萨蛮》如此大声镗鎝，未曾有也。","official":true},
+            {"id":30,"title":"江南春","author":"杜牧","dynasty":"唐","content":"千里莺啼绿映红，水村山郭酒旗风。\n南朝四百八十寺，多少楼台烟雨中。","commentary":"诗人以极具概括性的语言，为我们描绘了一幅生动形象而又有气魄的江南春画卷。既写出了江南春景的丰富多彩，也写出了它的广阔、深邃和迷离。","official":true},
+            {"id":31,"title":"登高","author":"杜甫","dynasty":"唐","content":"风急天高猿啸哀，渚清沙白鸟飞回。\n无边落木萧萧下，不尽长江滚滚来。\n万里悲秋常作客，百年多病独登台。\n艰难苦恨繁霜鬓，潦倒新停浊酒杯。","commentary":"前两联写登高闻见之景，后两联抒登高感触之情。由情选景，寓情于景，浑然一体，充分表达了诗人长年飘泊、忧国伤时、老病孤愁的复杂感情。","official":true},
+            {"id":32,"title":"饮酒·其五","author":"陶渊明","dynasty":"魏晋","content":"结庐在人境，而无车马喧。\n问君何能尔？心远地自偏。\n采菊东篱下，悠然见南山。\n山气日夕佳，飞鸟相与还。\n此中有真意，欲辨已忘言。","commentary":"前四句平易如口语，其实结构非常严密。第一句平平道出，第二句转折，第三句承上发问，第四句回答作结。高明在这种结构毫无生硬的人为痕迹。","official":true},
+            {"id":33,"title":"永遇乐·京口北固亭怀古","author":"辛弃疾","dynasty":"宋","content":"千古江山，英雄无觅，孙仲谋处。\n舞榭歌台，风流总被雨打风吹去。\n斜阳草树，寻常巷陌，人道寄奴曾住。\n想当年，金戈铁马，气吞万里如虎。\n元嘉草草，封狼居胥，赢得仓皇北顾。\n四十三年，望中犹记，烽火扬州路。\n可堪回首，佛狸祠下，一片神鸦社鼓。\n凭谁问，廉颇老矣，尚能饭否？","commentary":"同属豪放派，与苏轼相比，辛弃疾少了一份旷达、一份雄迈，多了几许悲凉、几许苍劲。全词基调虽是豪放，却流淌着一股浓郁的悲凉、惆怅之情。","official":true},
+            {"id":34,"title":"静夜思","author":"李白","dynasty":"唐","content":"床前明月光，疑是地上霜。\n举头望明月，低头思故乡。","commentary":"短短四句诗，写得清新朴素。它的构思是细致而深曲的，但却又是脱口吟成、浑然无迹的。从这里，我们不难领会到李白绝句的自然、\"无意于工而无不工\"的妙境。","official":true},
+            {"id":35,"title":"念奴娇·赤壁怀古","author":"苏轼","dynasty":"宋","content":"大江东去，浪淘尽，千古风流人物。\n故垒西边，人道是，三国周郎赤壁。\n乱石穿空，惊涛拍岸，卷起千堆雪。\n江山如画，一时多少豪杰。\n遥想公瑾当年，小乔初嫁了，雄姿英发。\n羽扇纶巾，谈笑间，樯橹灰飞烟灭。\n故国神游，多情应笑我，早生华发。\n人生如梦，一尊还酹江月。","commentary":"这首词感慨古今，雄浑苍凉，大气磅礴，把人们带入江山如画、奇伟雄壮的景色和深邃无比的历史沉思中。","official":true},
+            {"id":36,"title":"天净沙·秋思","author":"马致远","dynasty":"元","content":"枯藤老树昏鸦，小桥流水人家，古道西风瘦马。\n夕阳西下，断肠人在天涯。","commentary":"短短28字，意蕴深远，结构精巧，平仄起伏，顿挫有致，音韵铿锵，直贯灵心，历来被推崇为描写自然的佳作，堪称\"秋思\"之祖。","official":true},
+            {"id":37,"title":"虞美人·春花秋月何时了","author":"李煜","dynasty":"五代","content":"春花秋月何时了？往事知多少。\n小楼昨夜又东风，故国不堪回首月明中。\n雕栏玉砌应犹在，只是朱颜改。\n问君能有几多愁？恰似一江春水向东流。","commentary":"《虞美人》是李煜的代表作，也是李后主的绝命词。它充满悲恨凄楚的感情色彩，其感情之深厚、强烈，真如滔滔江水，大有不顾一切，冲决而出之势。","official":true},
+            {"id":38,"title":"沁园春·雪","author":"毛泽东","dynasty":"近现代","content":"北国风光，千里冰封，万里雪飘。\n望长城内外，惟余莽莽；大河上下，顿失滔滔。\n山舞银蛇，原驰蜡象，欲与天公试比高。\n须晴日，看红装素裹，分外妖娆。\n江山如此多娇，引无数英雄竞折腰。\n惜秦皇汉武，略输文采；唐宗宋祖，稍逊风骚。\n一代天骄，成吉思汗，只识弯弓射大雕。\n俱往矣，数风流人物，还看今朝。","commentary":"每次读来，都仿佛又回到了那个战火纷飞的年代，又看到了那个指点江山的伟人。不由地沉醉于那种豪放的风格、磅礴的气势、深远的意境、广阔的胸怀。","official":true},
+            {"id":39,"title":"水调歌头·明月几时有","author":"苏轼","dynasty":"宋","content":"明月几时有？把酒问青天。\n不知天上宫阙，今夕是何年。\n我欲乘风归去，又恐琼楼玉宇，高处不胜寒。\n起舞弄清影，何似在人间？\n转朱阁，低绮户，照无眠。\n不应有恨，何事长向别时圆？\n人有悲欢离合，月有阴晴圆缺，此事古难全。\n但愿人长久，千里共婵娟。","commentary":"此词上片望月，既怀逸兴壮思，而又脚踏实地，自具雅量高致。下片怀人，由中秋的圆月联想到人间的离别，同时感念人生的离合无常。全词可谓设景清丽雄阔。","official":true},
+            {"id":40,"title":"在狱咏蝉","author":"骆宾王","dynasty":"唐","content":"西陆蝉声唱，南冠客思侵。\n那堪玄鬓影，来对白头吟。\n露重飞难进，风多响易沉。\n无人信高洁，谁为表予心。","commentary":"作者歌咏蝉的高洁品行，寓情于物。全诗情感充沛，取譬明切，用典自然，语意双关，是咏物诗中的名作。","official":true},
+            {"id":41,"title":"咏柳","author":"贺知章","dynasty":"唐","content":"碧玉妆成一树高，万条垂下绿丝绦。\n不知细叶谁裁出，二月春风似剪刀。","commentary":"结构独具匠心，写柳树由干到叶，条序井然，\"赋物入妙，语意温柔\"。","official":true},
+            {"id":42,"title":"山居秋暝","author":"王维","dynasty":"唐","content":"空山新雨后，天气晚来秋。\n明月松间照，清泉石上流。\n竹喧归浣女，莲动下渔舟。\n随意春芳歇，王孙自可留。","commentary":"这首诗为山水名篇，于诗情画意之中，寄托着诗人高洁的情怀和对理想境界的追求。","official":true},
+            {"id":43,"title":"鸟鸣涧","author":"王维","dynasty":"唐","content":"人闲桂花落，夜静春山空。\n月出惊山鸟，时鸣春涧中。","commentary":"苏轼：\"味摩诘之诗，诗中有画，观摩诘之画，画中有诗。\"","official":true},
+            {"id":44,"title":"过故人庄","author":"孟浩然","dynasty":"唐","content":"故人具鸡黍，邀我至田家。\n绿树村边合，青山郭外斜。\n开轩面场圃，把酒话桑麻。\n待到重阳日，还来就菊花。","commentary":"初看似乎平淡如水，细细品味就像是一幅田园风光的画，令人心旷神怡。全诗自然流畅，语言朴实无华，意境清新隽永。","official":true},
+            {"id":45,"title":"宿建德江","author":"孟浩然","dynasty":"唐","content":"移舟泊烟渚，日暮客愁新。\n野旷天低树，江清月近人。","commentary":"闻一多：\"淡到看不见诗了，才是真正孟浩然的诗；与其说是孟浩然的诗，倒不如说是诗的孟浩然。\"","official":true},
+            {"id":46,"title":"走马川行奉送封大夫出师西征","author":"岑参","dynasty":"唐","content":"君不见走马川行雪海边，平沙莽莽黄入天。\n轮台九月风夜吼，一川碎石大如斗，随风满地石乱走。\n匈奴草黄马正肥，金山西见烟尘飞，汉家大将西出师。\n将军金甲夜不脱，半夜军行戈相拨，风头如刀面如割。\n马毛带雪汗气蒸，五花连钱旋作冰，幕中草檄砚水凝。\n虏骑闻之应胆慑，料知短兵不敢接，车师西门伫献捷。","commentary":"奇句豪气，风发泉涌。节奏急切有力，激越豪壮，别具一格。","official":true},
+            {"id":47,"title":"燕歌行","author":"高适","dynasty":"唐","content":"汉家烟尘在东北，汉将辞家破残贼。\n男儿本自重横行，天子非常赐颜色。\n摐金伐鼓下榆关，旌旆逶迤碣石间。\n校尉羽书飞瀚海，单于猎火照狼山。\n山川萧条极边土，胡骑凭陵杂风雨。\n战士军前半死生，美人帐下犹歌舞。\n大漠穷秋塞草腓，孤城落日斗兵稀。\n身当恩遇常轻敌，力尽关山未解围。\n铁衣远戍辛勤久，玉箸应啼别离后。\n少妇城南欲断肠，征人蓟北空回首。\n边庭飘飘那可度，绝域苍茫更何有。\n杀气三时作阵云，寒声一夜传刁斗。\n相看白刃血纷纷，死节从来岂顾勋。\n君不见沙场征战苦，至今犹忆李将军。","commentary":"全诗气势畅达，笔力矫健。气氛悲壮淋漓，主意深刻含蓄，人称高适的\"第一大篇\"，是整个唐代边塞诗中的杰作。","official":true},
+            {"id":48,"title":"出塞","author":"王昌龄","dynasty":"唐","content":"秦时明月汉时关，万里长征人未还。\n但使龙城飞将在，不教胡马度阴山。","commentary":"全诗以平凡的语言，唱出雄浑豁达的主旨，气势流畅，一气呵成。明代诗人李攀龙推此诗为唐人七绝压卷之作。","official":true},
+            {"id":49,"title":"凉州词","author":"王之涣","dynasty":"唐","content":"黄河远上白云间，一片孤城万仞山。\n羌笛何须怨杨柳，春风不度玉门关。","commentary":"写边塞雄景，戍卒不得还乡的慷慨苍凉。情调悲而不失其壮，是\"唐音\"的典型代表。\"旗亭画壁\"故事可见此诗广为传唱。","official":true},
+            {"id":50,"title":"将进酒","author":"李白","dynasty":"唐","content":"君不见，黄河之水天上来，奔流到海不复回。\n君不见，高堂明镜悲白发，朝如青丝暮成雪。\n人生得意须尽欢，莫使金樽空对月。\n天生我材必有用，千金散尽还复来。\n烹羊宰牛且为乐，会须一饮三百杯。\n岑夫子，丹丘生，将进酒，杯莫停。\n与君歌一曲，请君为我倾耳听。\n钟鼓馔玉不足贵，但愿长醉不复醒。\n古来圣贤皆寂寞，惟有饮者留其名。\n陈王昔时宴平乐，斗酒十千恣欢谑。\n主人何为言少钱，径须沽取对君酌。\n五花马，千金裘，呼儿将出换美酒，与尔同销万古愁。","commentary":"余光中：\"酒入豪肠，七分酿成了月光，余下的三分啸成剑气，绣口一吐就半个盛唐。\"","official":true},
+            {"id":51,"title":"独坐敬亭山","author":"李白","dynasty":"唐","content":"众鸟高飞尽，孤云独去闲。\n相看两不厌，只有敬亭山。","commentary":"表面是写独游敬亭山的情趣，而其深含之意则是生命历程中旷世的孤独感，是诗人表现自己精神世界的佳作。","official":true},
+            {"id":52,"title":"寒食","author":"韩翃","dynasty":"唐","content":"春城无处不飞花，寒食东风御柳斜。\n日暮汉宫传蜡烛，轻烟散入五侯家。","commentary":"一诗之中有长安飞絮图与夜宫传烛图，白描写实，形象生动，又似暗藏讽议。据传唐德宗十分赏识这首诗。","official":true},
+            {"id":53,"title":"江村即事","author":"司空曙","dynasty":"唐","content":"钓罢归来不系船，江村月落正堪眠。\n纵然一夜风吹去，只在芦花浅水边。","commentary":"语言清新自然，信手拈来，钓者悠闲的生活情趣和江村宁静优美的景色跃然纸上。","official":true},
+            {"id":54,"title":"送李端","author":"卢纶","dynasty":"唐","content":"故关衰草遍，离别自堪悲。\n路出寒云外，人归暮雪时。\n少孤为客早，多难识君迟。\n掩泪空相向，风尘何处期？","commentary":"一首感人至深的送别诗，\"悲\"字贯串全篇。诗人多年漂泊之苦，朋友惜别之悲，相识甚晚之恨，交织在一起，悲凄感人。","official":true},
+            {"id":55,"title":"听夜雨寄卢纶","author":"李端","dynasty":"唐","content":"暮雨萧条过凤城，霏霏飒飒重还轻。\n闻君此夜东林宿，听得荷池几番声。","commentary":"萧萧暮雨，诗人怀想友人，遥想友人是否同样因夜雨而愁思不眠。款款询问，娓娓道来，更显深情厚谊。","official":true},
+            {"id":56,"title":"左迁至蓝关示侄孙湘","author":"韩愈","dynasty":"唐","content":"一封朝奏九重天，夕贬潮州路八千。\n欲为圣朝除弊事，肯将衰朽惜残年！\n云横秦岭家何在？雪拥蓝关马不前。\n知汝远来应有意，好收吾骨瘴江边。","commentary":"全诗熔叙事、写景、抒情为一炉，抒发内心苦闷郁愤之感，与《谏迎佛骨表》诗文双璧，是韩诗七律中的精品。","official":true},
+            {"id":57,"title":"寒地百姓吟","author":"孟郊","dynasty":"唐","content":"无火炙地眠，半夜皆立号。\n冷箭何处来，棘针风骚骚。\n霜吹破四壁，苦痛不可逃。\n高堂槌钟饮，到晓闻烹炮。\n寒者愿为蛾，烧死彼华膏。\n华膏隔仙罗，虚绕千万遭。\n到头落地死，踏地为游遨。\n游遨者是谁？君子为郁陶！","commentary":"全篇立意自杜甫\"朱门酒肉臭，路有冻死骨\"，但极为具体地描绘了一幅贫富悬殊的画卷，充满幽愤，是诗歌史上少见的揭露如此深刻尖锐的作品。","official":true},
+            {"id":58,"title":"苦昼短","author":"李贺","dynasty":"唐","content":"飞光飞光，劝尔一杯酒。\n吾不识青天高，黄地厚。\n唯见月寒日暖，来煎人寿。\n食熊则肥，食蛙则瘦。\n神君何在？太一安有？\n天东有若木，下置衔烛龙。\n吾将斩龙足，嚼龙肉，使之朝不得回，夜不得伏。\n自然老者不死，少者不哭。\n何为服黄金、吞白玉？\n谁似任公子，云中骑碧驴。\n刘彻茂陵多滞骨，嬴政梓棺费鲍鱼。","commentary":"运用了丰富的艺术表现手法，充满着浪漫气质的幻想，又包含对当时社会奢侈迷信的议论批判，使全诗显得回旋跌宕而又玩味无穷。","official":true},
+            {"id":59,"title":"遣悲怀其三","author":"元稹","dynasty":"唐","content":"闲坐悲君亦自悲，百年都是几多时。\n邓攸无子寻知命，潘岳悼亡犹费词。\n同穴窅冥何所望，他生缘会更难期。\n惟将终夜常开眼，报答平生未展眉。","commentary":"元稹怀念原配妻子而作，共三首。蘅塘退士《唐诗三百首》：\"古今悼亡诗充栋，终无能出此三首范围者，勿以浅近忽之。\"","official":true},
+            {"id":60,"title":"田家词","author":"元稹","dynasty":"唐","content":"牛咤咤，田确确。\n旱块敲牛蹄趵趵，种得官仓珠颗谷。\n六十年来兵簇簇，月月食粮车辘辘。\n一日官军收海服，驱牛驾车食牛肉。\n归来收得牛两角，重铸锄犁作斤劚。\n姑舂妇担去输官，输官不足归卖屋。\n愿官早胜仇早覆，农死有儿牛有犊。\n誓不遣官军粮不足。","commentary":"几乎完全用农民自述的口吻、用白描的手法叙事，在貌似平和顺从的话语里，表现了农民痛苦心声和血泪控诉，具有极大的真实性和感人肺腑的力量。","official":true},
+            {"id":61,"title":"卖炭翁","author":"白居易","dynasty":"唐","content":"卖炭翁，伐薪烧炭南山中。\n满面尘灰烟火色，两鬓苍苍十指黑。\n卖炭得钱何所营？身上衣裳口中食。\n可怜身上衣正单，心忧炭贱愿天寒。\n夜来城外一尺雪，晓驾炭车辗冰辙。\n牛困人饥日已高，市南门外泥中歇。\n翩翩两骑来是谁？黄衣使者白衫儿。\n手把文书口称敕，回车叱牛牵向北。\n一车炭，千余斤，宫使驱将惜不得。\n半匹红绡一丈绫，系向牛头充炭直。","commentary":"通过描写卖炭翁的遭遇，深刻地揭露了\"宫市\"的腐败本质，有很强的社会典型意义。全诗描写具体生动，结尾含蓄有力，在事物细节的选择上和人物心理的刻画上有独到之处，是千古传诵的名篇。","official":true},
+            {"id":62,"title":"赤壁","author":"杜牧","dynasty":"唐","content":"折戟沉沙铁未销，自将磨洗认前朝。\n东风不与周郎便，铜雀春深锁二乔。","commentary":"即物感兴，由铁戟而引发联翩思绪，对历史战争的体悟更是以小见大。后两句也成为千古传诵的佳句，是咏史名篇。","official":true},
+            {"id":63,"title":"贾生","author":"李商隐","dynasty":"唐","content":"宣室求贤访逐臣，贾生才调更无伦。\n可怜夜半虚前席，不问苍生问鬼神。","commentary":"借古讽今，深刻而具有力度，借贾谊的遭遇，抒写诗人怀才不遇的感慨。","official":true},
+            {"id":64,"title":"无题","author":"李商隐","dynasty":"唐","content":"昨夜星辰昨夜风，画楼西畔桂堂东。\n身无彩凤双飞翼，心有灵犀一点通。\n隔座送钩春酒暖，分曹射覆蜡灯红。\n嗟余听鼓应官去，走马兰台类转蓬。","commentary":"李商隐在诗歌史上的一个重要贡献，是创造性地丰富了诗的抒情艺术，以《无题》诸作堪称典型。吴乔《西昆发微序》：\"唐人能自辟宇宙者，惟李、杜、昌黎、义山。\"","official":true},
+            {"id":65,"title":"浣溪沙","author":"晏殊","dynasty":"宋","content":"一曲新词酒一杯，去年天气旧亭台。\n夕阳西下几时回？\n无可奈何花落去，似曾相识燕归来。\n小园香径独徘徊。","commentary":"词中\"无可奈何花落去，似曾相识燕归来\"一联，工巧而浑成，流利而含蓄，为千古传诵的名句。全词意境闲雅，情调伤感，语言清丽，音韵和谐，表现了词人对时光流逝的惆怅和对美好事物的眷恋。","official":true},
+            {"id":66,"title":"雨霖铃","author":"柳永","dynasty":"宋","content":"寒蝉凄切，对长亭晚，骤雨初歇。\n都门帐饮无绪，留恋处、兰舟催发。\n执手相看泪眼，竟无语凝噎。\n念去去、千里烟波，暮霭沉沉楚天阔。\n多情自古伤离别，更那堪，冷落清秋节！\n今宵酒醒何处？杨柳岸、晓风残月。\n此去经年，应是良辰美景虚设。\n便纵有千种风情，更与何人说？","commentary":"柳永\"骯皺从俗，天下咏之\"，第一位对宋词进行全面革新的词人，也是两宋词坛上创用词调最多的词人。他大力创作慢词，将敷陈其事的赋法移植于词，同时充分运用俚词俗语，对宋词的发展产生了深远影响。","official":true},
+            {"id":67,"title":"满江红·怒发冲冠","author":"岳飞","dynasty":"宋","content":"怒发冲冠，凭栏处、潇潇雨歇。\n抬望眼，仰天长啸，壮怀激烈。\n三十功名尘与土，八千里路云和月。\n莫等闲、白了少年头，空悲切！\n靖康耻，犹未雪，臣子恨，何时灭！\n驾长车，踏破贺兰山缺。\n壮志饥餐胡虏肉，笑谈渴饮匈奴血。\n待从头收拾旧山河，朝天阙。","commentary":"他的词作，首首与抗战相关，字字珠玑，尤其这首\"壮怀激烈\"的《满江红》，光昭日月，气吞山河，成为千古传诵的爱国名篇。","official":true},
+            {"id":68,"title":"虞美人·听雨","author":"蒋捷","dynasty":"宋","content":"少年听雨歌楼上，红烛昏罗帐。\n壮年听雨客舟中，江阔云低断、雁叫西风。\n而今听雨僧庐下，鬓已星星也。\n悲欢离合总无情，一任阶前、点滴到天明。","commentary":"独立于时代风气之外其词极富特色和个性，词风另辟蹊径，不主一家，而兼融豪放词的清奇流畅和婉约词的含蓄蕴藉，既无辛派后劲粗放直率之病，也无姜派末流刻削隐晦之失，在宋末词坛上\"独立于时代风气之外\"，卓然成家。","official":true}
+        ];
+
+        // ===== 状态管理 =====
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        // ===== 初始化 =====
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPoems();
+            
+            // 搜索监听
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim();
+                renderPoems();
+            });
+
+            // ESC关闭弹窗
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeModal();
+            });
+        });
+
+        // ===== 渲染诗词列表 =====
+        function renderPoems() {
+            const grid = document.getElementById('poemsGrid');
+            const empty = document.getElementById('emptyState');
+            const stats = document.getElementById('stats');
+            
+            let filtered = poemsData.filter(poem => {
+                // 朝代筛选
+                if (currentFilter !== 'all') {
+                    if (currentFilter === '唐' && !poem.dynasty.includes('唐')) return false;
+                    if (currentFilter === '宋' && !poem.dynasty.includes('宋')) return false;
+                    if (currentFilter === '先秦' && poem.dynasty !== '先秦') return false;
+                }
+                
+                // 搜索筛选
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    return poem.title.includes(q) || 
+                           poem.author.includes(q) || 
+                           poem.content.includes(q) ||
+                           poem.dynasty.includes(q);
+                }
+                return true;
+            });
+
+            stats.innerHTML = `共收录 <strong>${poemsData.length}</strong> 首经典诗词 · 当前显示 <strong>${filtered.length}</strong> 首`;
+
+            if (filtered.length === 0) {
+                grid.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            empty.style.display = 'none';
+            
+            grid.innerHTML = filtered.map((poem, idx) => `
+                <div class="poem-card" onclick="openDetail(${poem.id})" style="animation-delay: ${idx * 0.05}s">
+                    ${poem.official ? '<div class="has-official" title="大师点评"></div>' : ''}
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">《${poem.title}》</div>
+                            <div class="card-author">${poem.dynasty} · ${poem.author}</div>
+                        </div>
+                        <span class="card-dynasty">${poem.dynasty}</span>
+                    </div>
+                    <div class="card-content">${poem.content}</div>
+                    <div class="card-commentary-preview">
+                        ${poem.commentary.substring(0, 80)}${poem.commentary.length > 80 ? '...' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== 筛选 =====
+        function filterBy(dynasty) {
+            currentFilter = dynasty;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === dynasty);
+            });
+            
+            renderPoems();
+        }
+
+        // ===== 打开详情 =====
+        function openDetail(id) {
+            const poem = poemsData.find(p => p.id === id);
+            if (!poem) return;
+
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('modalBody');
+            
+            const officialBadge = poem.official 
+                ? '' 
+                : '<span class="ai-badge">🤖 AI 大师点评</span>';
+
+            body.innerHTML = `
+                <div class="daily-poem">
+                    <h2 class="modal-title">《${poem.title}》${officialBadge}</h2>
+                    <div class="modal-meta">
+                        <span>${poem.dynasty}</span>
+                        <span>${poem.author}</span>
+                    </div>
+                    <div class="modal-poem-text">${poem.content}</div>
+                    <div class="modal-commentary">
+                        <h3>大师点评</h3>
+                        <p>${poem.commentary}</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ===== 关闭弹窗 =====
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ===== 随机推荐 =====
+        function showRandomPoem() {
+            const random = poemsData[Math.floor(Math.random() * poemsData.length)];
+            openDetail(random.id);
+        }
+    </script>
+</body>
+</html>
